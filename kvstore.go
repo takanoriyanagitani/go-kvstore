@@ -10,6 +10,9 @@ type Upsert func(ctx context.Context, item BucketItem) error
 type Insert func(ctx context.Context, item BucketItem) error
 type Delete func(ctx context.Context, key Key) error
 
+// BulkUpsert upserts items into single bucket.
+type BulkUpsert func(ctx context.Context, bucket Bucket, items Iter[BucketItem]) error
+
 func NonAtomicUpsertBuilder(sel Select) func(Delete) func(Insert) Upsert {
 	return func(del Delete) func(Insert) Upsert {
 		return func(ins Insert) Upsert {

@@ -69,7 +69,7 @@ func (f FsBulkUpsertFactory) Build() kv.Either[FsBulkUpsert, error] {
 }
 
 func (f FsBulkUpsertFactory) BuildWithConverter(i2w Items2writer) kv.Either[FsBulkUpsert, error] {
-    return f.WithConverter(i2w).Build()
+	return f.WithConverter(i2w).Build()
 }
 
 func (f FsBulkUpsertFactory) WithConverter(i2w Items2writer) FsBulkUpsertFactory {

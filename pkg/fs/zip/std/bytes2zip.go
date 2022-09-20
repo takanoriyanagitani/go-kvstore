@@ -36,7 +36,7 @@ func (f Bytes2zipBuilderFactory) ZipRaw() Bytes2zipBuilder {
 			var ew kv.Either[io.Writer, error] = kv.EitherFlatMap(
 				efh,
 				func(fh *zip.FileHeader) kv.Either[io.Writer, error] {
-					return kv.EitherNew(zw.CreateRaw(fh))
+					return kv.EitherNew(zw.CreateHeader(fh))
 				},
 			)
 			var ei kv.Either[int, error] = kv.EitherFlatMap(

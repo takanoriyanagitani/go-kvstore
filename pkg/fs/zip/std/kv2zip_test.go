@@ -190,8 +190,24 @@ func TestAll(t *testing.T) {
 					}
 				}
 
-                t.Run("item 0", chk(zr.File[0], "path/inside/zip/file1.txt", []byte("test 1")))
-                t.Run("item 1", chk(zr.File[1], "path/inside/zip/file2.txt", []byte("test II")))
+				t.Run("item 0", chk(zr.File[0], "path/inside/zip/file1.txt", []byte("test 1")))
+				t.Run("item 1", chk(zr.File[1], "path/inside/zip/file2.txt", []byte("test II")))
+			})
+
+			t.Run("single invalid zip item", func(t *testing.T) {
+				t.Parallel()
+
+				var buf bytes.Buffer
+				var e error = i2w(context.Background(), &buf, kv.IterFromArray([]kv.BucketItem{
+					kv.BucketItemNew(
+						kv.KeyNew(
+							func() string { return "" },
+							[]byte(""),
+						),
+						kv.ValNew(nil),
+					),
+				}))
+				t.Run("wrote with error", checker(nil != e, true))
 			})
 		})
 	})

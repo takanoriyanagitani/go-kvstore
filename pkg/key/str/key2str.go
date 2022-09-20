@@ -35,6 +35,20 @@ func ValidateIdNew(vb ValidateBytes) ValidateId {
 	}
 }
 
+func ValidateIdLowerBound(bucket int, id int) ValidateId {
+	return func(k kv.Key) (valid bool) {
+		var b bool = bucket <= len(k.BucketString())
+		var i bool = id <= len(k.Id())
+		return b && i
+	}
+}
+
+func (v ValidateId) Concat(other ValidateId) ValidateId {
+	return func(k kv.Key) (valid bool) {
+		return v(k) && other(k)
+	}
+}
+
 func ValidateBucketNew(vs ValidateString) ValidateBucket {
 	return func(k kv.Key) (valid bool) {
 		var bs string = k.BucketString()

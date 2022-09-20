@@ -46,7 +46,7 @@ func Item2zipBuilderNew(b2zb Bytes2zipBuilder) Item2zip {
 			var id []byte = k.Id()
 			var dt []byte = v.Raw()
 
-			var vi ks.ValidateId = ks.ValidateIdUtf8
+			var vi ks.ValidateId = ks.ValidateIdUtf8.Concat(ks.ValidateIdLowerBound(0, 1))
 
 			return kv.Error1st([]func() error{
 				kv.Bool2ef(vi(k), func() error { return fmt.Errorf("Invalid id") }),

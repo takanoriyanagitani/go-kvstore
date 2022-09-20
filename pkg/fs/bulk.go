@@ -68,6 +68,10 @@ func (f FsBulkUpsertFactory) Build() kv.Either[FsBulkUpsert, error] {
 	return o.OkOrElse(func() error { return fmt.Errorf("Invalid argument") })
 }
 
+func (f FsBulkUpsertFactory) BuildWithConverter(i2w Items2writer) kv.Either[FsBulkUpsert, error] {
+    return f.WithConverter(i2w).Build()
+}
+
 func (f FsBulkUpsertFactory) WithConverter(i2w Items2writer) FsBulkUpsertFactory {
 	f.i2w = i2w
 	return f

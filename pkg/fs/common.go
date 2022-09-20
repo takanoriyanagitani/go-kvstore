@@ -15,8 +15,6 @@ import (
 
 const FilemodeDefault fs.FileMode = 0644
 
-type BulkUpsertBuilderFs func(basedir string) kv.BulkUpsert
-
 type GetBasename func(fullpath string) (basename string)
 
 var GetBasenameFs GetBasename = filepath.Base
@@ -27,18 +25,6 @@ type FilemodeProvider func() fs.FileMode
 var FilemodeProviderDefault FilemodeProvider = func() fs.FileMode { return FilemodeDefault }
 
 type Items2writer func(context.Context, io.Writer, kv.Iter[kv.BucketItem]) error
-
-type Bucket2filename func(b kv.Bucket) kv.Either[string, error]
-
-type TempfilenameGenerator func(fullpath string) string
-
-func TempfilenameGeneratorBuilderSimpleNew(suffix string) TempfilenameGenerator {
-	return func(fullpath string) string {
-		return fullpath + suffix
-	}
-}
-
-var TempfilenameGeneratorSimpleDefault TempfilenameGenerator = TempfilenameGeneratorBuilderSimpleNew(".tmp")
 
 type FsBulkUpsert func(ctx context.Context, fullpath string, items kv.Iter[kv.BucketItem]) error
 

@@ -53,5 +53,11 @@ func write2tmp(chk GetCheckedFilepath, dirname string, tmpname string, cb func(i
 		return e
 	}
 
+	e = f.Sync()
+	if nil != e {
+		_ = f.Close()
+		return e
+	}
+
 	return f.Close()
 }

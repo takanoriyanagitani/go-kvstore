@@ -86,3 +86,9 @@ func IterFilterDefaultNew[T any]() IterFilter[T] {
 		return IterFromArray(s)
 	}
 }
+
+func IterAll[T any](i Iter[T], f func(T) bool) bool {
+    return IterReduce(i, true, func(state bool, t T) bool {
+        return state && f(t)
+    })
+}

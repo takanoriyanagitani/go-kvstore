@@ -1,7 +1,6 @@
 package fscommon
 
 import (
-	"bufio"
 	"context"
 	"io"
 	"io/fs"
@@ -26,45 +25,6 @@ var FilemodeProviderDefault FilemodeProvider = func() fs.FileMode { return Filem
 
 type Items2writer func(context.Context, io.Writer, kv.Iter[kv.BucketItem]) error
 
-type FsBulkUpsert func(ctx context.Context, fullpath string, items kv.Iter[kv.BucketItem]) error
-
-func FsBulkUpsertNew(chk GetCheckedFilepath) func(TempfilenameGenerator) func(Items2writer) FsBulkUpsert {
-	return func(tg TempfilenameGenerator) func(Items2writer) FsBulkUpsert {
-		return func(iw Items2writer) FsBulkUpsert {
-			return func(ctx context.Context, fullpath string, items kv.Iter[kv.BucketItem]) error {
-				var dirname string = filepath.Dir(fullpath)
-				var tmpname string = tg(fullpath)
-				iwGen := func(w io.Writer) error {
-					var bw *bufio.Writer = bufio.NewWriter(w)
-					e := iw(ctx, w, items)
-					if nil != e {
-						return e
-					}
-					return bw.Flush()
-				}
-				return kv.Error1st([]func() error{
-					func() error {
-						return write2tmp(chk, dirname, tmpname, iwGen)
-					},
-					func() error { return os.Rename(tmpname, fullpath) },
-				})
-			}
-		}
-	}
-}
-
-func BulkUpsertNew(fbu FsBulkUpsert) func(Bucket2filename) kv.BulkUpsert {
-	return func(pg Bucket2filename) kv.BulkUpsert {
-		return func(ctx context.Context, bucket kv.Bucket, items kv.Iter[kv.BucketItem]) error {
-			var epath kv.Either[string, error] = pg(bucket)
-			var ee kv.Either[error, error] = kv.EitherMap(epath, func(fullpath string) error {
-				return fbu(ctx, fullpath, items)
-			})
-			return ee.UnwrapOrElse(kv.Identity[error])
-		}
-	}
-}
-
 type GetCheckedFilepath func(prefix string, unchecked string) string
 
 func GetCheckedFilepathBuilderNew(alt string) GetCheckedFilepath {
@@ -77,6 +37,9 @@ func GetCheckedFilepathBuilderNew(alt string) GetCheckedFilepath {
 		return alt
 	}
 }
+
+// GetCheckedFilepathDefault creates GetCheckedFilepath using empty path(which should be invalid).
+var GetCheckedFilepathDefault GetCheckedFilepath = GetCheckedFilepathBuilderNew("")
 
 func write2tmp(chk GetCheckedFilepath, dirname string, tmpname string, cb func(io.Writer) error) error {
 	f, e := os.Create(chk(dirname, tmpname))

@@ -38,3 +38,23 @@ func Curry[T, U, V any](f func(T, U) V) func(T) func(U) V {
 		}
 	}
 }
+
+func Error1st(ef []func() error) error {
+	return IterReduce(IterFromArray(ef), nil, func(e error, f func() error) error {
+		if nil == e {
+			return f()
+		}
+		return e
+	})
+}
+
+func Bool2ef(ok bool, ng func() error) func() error {
+	if ok {
+		return func() error { return nil }
+	}
+	return ng
+}
+
+func Bool2error(ok bool, ng func() error) error {
+	return Bool2ef(ok, ng)()
+}

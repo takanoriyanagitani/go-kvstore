@@ -6,6 +6,8 @@ type eitherTryForEach[T, E any] func(f func(T) E) E
 type eitherMap[T, E any] func(f func(T) T) Either[T, E]
 type eitherFlatMap[T, E any] func(f func(T) Either[T, E]) Either[T, E]
 type eitherUnwrapOrElse[T, E any] func(f func(E) T) T
+type eitherLeft[E any] func() Option[E]
+type eitherRight[T any] func() Option[T]
 
 type Either[T, E any] struct {
 	left         Option[E]
@@ -15,6 +17,8 @@ type Either[T, E any] struct {
 	emap         eitherMap[T, E]
 	flatMap      eitherFlatMap[T, E]
 	unwrapOrElse eitherUnwrapOrElse[T, E]
+	getLeft      eitherLeft[E]
+	getRight     eitherRight[T]
 }
 
 func (e Either[T, E]) IsOk() bool                                  { return e.right.HasValue() }
@@ -24,6 +28,8 @@ func (e Either[T, E]) Map(f func(T) T) Either[T, E]                { return e.em
 func (e Either[T, E]) FlatMap(f func(T) Either[T, E]) Either[T, E] { return e.flatMap(f) }
 func (e Either[T, E]) Ok() Option[T]                               { return e.right }
 func (e Either[T, E]) UnwrapOrElse(f func(E) T) T                  { return e.unwrapOrElse(f) }
+func (e Either[T, E]) Left() Option[E]                             { return e.getLeft() }
+func (e Either[T, E]) Right() Option[T]                            { return e.getRight() }
 
 func EitherRight[T, E any](t T) Either[T, E] {
 	return Either[T, E]{
@@ -34,6 +40,8 @@ func EitherRight[T, E any](t T) Either[T, E] {
 		tryForEach:   func(f func(T) E) E { return f(t) },
 		emap:         func(f func(T) T) Either[T, E] { return EitherRight[T, E](f(t)) },
 		flatMap:      func(f func(T) Either[T, E]) Either[T, E] { return f(t) },
+		getLeft:      func() Option[E] { return OptionEmpty[E]() },
+		getRight:     func() Option[T] { return OptionNew(t) },
 	}
 }
 
@@ -46,6 +54,8 @@ func EitherLeft[T, E any](e E) Either[T, E] {
 		tryForEach:   func(_ func(T) E) E { return e },
 		emap:         func(_ func(T) T) Either[T, E] { return EitherLeft[T, E](e) },
 		flatMap:      func(_ func(T) Either[T, E]) Either[T, E] { return EitherLeft[T, E](e) },
+		getLeft:      func() Option[E] { return OptionNew(e) },
+		getRight:     func() Option[T] { return OptionEmpty[T]() },
 	}
 }
 

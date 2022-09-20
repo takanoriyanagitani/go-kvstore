@@ -39,33 +39,6 @@ type Bytes2zip func(b []byte, zw *zip.Writer) error
 
 type Bytes2zipBuilder func(name string) Bytes2zip
 
-type MemFile struct {
-	basename string
-	data     []byte
-	mode     fs.FileMode
-	modified time.Time
-}
-
-func MemFileNew(basename string, data []byte, mode fs.FileMode, modified time.Time) MemFile {
-	return MemFile{
-		basename,
-		data,
-		mode,
-		modified,
-	}
-}
-
-func (m MemFile) Name() string       { return m.basename }
-func (m MemFile) Size() int64        { return int64(len(m.data)) }
-func (m MemFile) Mode() fs.FileMode  { return m.mode }
-func (m MemFile) ModTime() time.Time { return m.modified }
-func (m MemFile) IsDir() bool        { return false }
-func (m MemFile) Sys() any           { return nil }
-
-func (m MemFile) ToZipItemInfo(fullpath string) ZipItemInfo {
-	return ZipItemInfoNew(fullpath, m)
-}
-
 var TimestampProviderZipEpoch kf.TimestampProvider = func() time.Time { return ZipEpoch }
 
 type Bytes2zipBuilderFactory struct {
@@ -81,8 +54,8 @@ func (f Bytes2zipBuilderFactory) ZipRaw() Bytes2zipBuilder {
 			var timestamp time.Time = f.tsp()
 
 			var basename string = f.gbn(fullpath)
-			var mf MemFile = MemFileNew(basename, b, mode, timestamp)
-			var zi ZipItemInfo = mf.ToZipItemInfo(fullpath)
+			var mf kf.MemFile = kf.MemFileNew(basename, b, mode, timestamp)
+			var zi ZipItemInfo = ZipItemInfoNew(fullpath, mf)
 			var efh kv.Either[*zip.FileHeader, error] = zi.ToHeader()
 			var ew kv.Either[io.Writer, error] = kv.EitherFlatMap(
 				efh,

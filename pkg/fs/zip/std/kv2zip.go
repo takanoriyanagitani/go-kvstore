@@ -6,29 +6,14 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"path/filepath"
 	"time"
 
 	kv "github.com/takanoriyanagitani/go-kvstore"
+	kf "github.com/takanoriyanagitani/go-kvstore/pkg/fs"
 	ks "github.com/takanoriyanagitani/go-kvstore/pkg/key/str"
 )
 
 var ZipEpoch time.Time = time.Date(1980, time.January, 1, 0, 0, 0, 0, time.UTC)
-
-const FilemodeDefault fs.FileMode = 0644
-
-type BulkUpsertBuilderFs func(basedir string) kv.BulkUpsert
-
-func BulkUpsertBuilderNew(vb ks.ValidateBucket) func(ks.ValidateId) BulkUpsertBuilderFs {
-	return func(vi ks.ValidateId) BulkUpsertBuilderFs {
-		return func(basedir string) kv.BulkUpsert {
-			return func(ctx context.Context, bucket kv.Bucket, items kv.Iter[kv.BucketItem]) error {
-				// TODO
-				return nil
-			}
-		}
-	}
-}
 
 type ZipItemInfo struct {
 	fullpath string
@@ -81,20 +66,12 @@ func (m MemFile) ToZipItemInfo(fullpath string) ZipItemInfo {
 	return ZipItemInfoNew(fullpath, m)
 }
 
-type GetBasename func(fullpath string) (basename string)
-
-var GetBasenameFs GetBasename = filepath.Base
-
-type TimestampProvider func() time.Time
-type FilemodeProvider func() fs.FileMode
-
-var TimestampProviderZipEpoch TimestampProvider = func() time.Time { return ZipEpoch }
-var FilemodeProviderDefault FilemodeProvider = func() fs.FileMode { return FilemodeDefault }
+var TimestampProviderZipEpoch kf.TimestampProvider = func() time.Time { return ZipEpoch }
 
 type Bytes2zipBuilderFactory struct {
-	fmp FilemodeProvider
-	tsp TimestampProvider
-	gbn GetBasename
+	fmp kf.FilemodeProvider
+	tsp kf.TimestampProvider
+	gbn kf.GetBasename
 }
 
 func (f Bytes2zipBuilderFactory) ZipRaw() Bytes2zipBuilder {
@@ -125,7 +102,7 @@ func (f Bytes2zipBuilderFactory) ZipRaw() Bytes2zipBuilder {
 	}
 }
 
-func Bytes2zipBuilderFactoryNew(fmp FilemodeProvider, tsp TimestampProvider, gbn GetBasename) kv.Either[Bytes2zipBuilderFactory, error] {
+func Bytes2zipBuilderFactoryNew(fmp kf.FilemodeProvider, tsp kf.TimestampProvider, gbn kf.GetBasename) kv.Either[Bytes2zipBuilderFactory, error] {
 	var ok bool = kv.IterReduce(
 		kv.IterFromArray([]bool{
 			nil != fmp,
@@ -146,9 +123,9 @@ func Bytes2zipBuilderFactoryNew(fmp FilemodeProvider, tsp TimestampProvider, gbn
 }
 
 var Bytes2zipBuilderFactoryDefault Bytes2zipBuilderFactory = Bytes2zipBuilderFactoryNew(
-	FilemodeProviderDefault,
+	kf.FilemodeProviderDefault,
 	TimestampProviderZipEpoch,
-	GetBasenameFs,
+	kf.GetBasenameFs,
 ).Ok().Must()
 
 var Bytes2zipBuilderRawDefault Bytes2zipBuilder = Bytes2zipBuilderFactoryDefault.ZipRaw()
@@ -191,9 +168,7 @@ func Items2zipBuilderNewDefault(i2z Item2zip) Items2zip {
 
 var Items2zipRawDefault Items2zip = Items2zipBuilderNewDefault(Item2zipRawDefault)
 
-type Items2writer func(context.Context, io.Writer, kv.Iter[kv.BucketItem]) error
-
-func Items2writerBuilderNew(i2z Items2zip) Items2writer {
+func Items2writerBuilderNew(i2z Items2zip) kf.Items2writer {
 	return func(ctx context.Context, w io.Writer, items kv.Iter[kv.BucketItem]) error {
 		var zw *zip.Writer = zip.NewWriter(w)
 		e := i2z(ctx, zw, items)
@@ -210,4 +185,4 @@ func Items2writerBuilderNew(i2z Items2zip) Items2writer {
 	}
 }
 
-var Items2writerRawDefault Items2writer = Items2writerBuilderNew(Items2zipRawDefault)
+var Items2writerRawDefault kf.Items2writer = Items2writerBuilderNew(Items2zipRawDefault)

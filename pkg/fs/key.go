@@ -10,6 +10,6 @@ type FsKey struct {
 	id      string // filename inside the archive
 }
 
-func (f FsKey) ToFullpath() string {
-	return filepath.Join(f.dirname, f.bucket)
-}
+func (f FsKey) ToFullpath() string { return filepath.Join(f.dirname, f.bucket) }
+
+func (f FsKey) ToItemname() string { return f.id }

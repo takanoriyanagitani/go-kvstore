@@ -21,6 +21,8 @@ type Rc2Bytes func(r io.ReadCloser) kv.Either[[]byte, error]
 
 type File2Bytes func(f fs.File) kv.Either[[]byte, error]
 
+type Ids func() kv.Either[kv.Iter[string], error]
+
 type ReaderAtSize struct {
 	io.ReaderAt
 	Size int64

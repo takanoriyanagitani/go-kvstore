@@ -92,3 +92,10 @@ func IterAll[T any](i Iter[T], f func(T) bool) bool {
 		return state && f(t)
 	})
 }
+
+func IterMap[T, U any](i Iter[T], f func(T) U) Iter[U] {
+	return func() Option[U] {
+		var ot Option[T] = i()
+		return OptionMap(ot, f)
+	}
+}

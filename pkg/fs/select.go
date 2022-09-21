@@ -10,6 +10,8 @@ import (
 
 type FsSelect func(ctx context.Context, key FsKey) kv.Either[kv.Option[kv.Val], error]
 
+type Archive2Bytes func(fs.File) kv.Either[Name2Bytes, error]
+
 type Name2Rc func(name string) kv.Either[io.ReadCloser, error]
 
 type Name2File func(name string) kv.Either[fs.File, error]

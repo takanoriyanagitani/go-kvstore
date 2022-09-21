@@ -25,8 +25,8 @@ func ras2zipReader(ras kf.ReaderAtSize) kv.Either[*zip.Reader, error] {
 	return kv.EitherNew(zip.NewReader(ras.ReaderAt, ras.Size))
 }
 
-func Name2BytesBuilderNew(ras kf.ReaderAtSize) func(kf.File2Bytes) kv.Either[kf.Name2Bytes, error] {
-	return func(f2b kf.File2Bytes) kv.Either[kf.Name2Bytes, error] {
+func Name2BytesBuilderNew(f2b kf.File2Bytes) func(kf.ReaderAtSize) kv.Either[kf.Name2Bytes, error] {
+	return func(ras kf.ReaderAtSize) kv.Either[kf.Name2Bytes, error] {
 		var ezr kv.Either[*zip.Reader, error] = ras2zipReader(ras)
 		var z2n func(zr *zip.Reader) kf.Name2Bytes = name2BytesBuilderNew(f2b)
 		return kv.EitherMap(ezr, z2n)
@@ -34,7 +34,7 @@ func Name2BytesBuilderNew(ras kf.ReaderAtSize) func(kf.File2Bytes) kv.Either[kf.
 }
 
 func UnlimitedName2BytesBuilderNew(ras kf.ReaderAtSize) kv.Either[kf.Name2Bytes, error] {
-	return Name2BytesBuilderNew(ras)(kf.UnlimitedFile2Bytes)
+	return Name2BytesBuilderNew(kf.UnlimitedFile2Bytes)(ras)
 }
 
 func file2id(f *zip.File) (id string) {
@@ -57,3 +57,12 @@ func IdsBuilderNew(ras kf.ReaderAtSize) kf.Ids {
 		return ras2names(ras)
 	}
 }
+
+func Archive2bytesNew(f2b kf.File2Bytes) kf.Archive2Bytes {
+	return kv.ComposeEither(
+		kf.File2ReaderAtSizeBuilderNew(f2b),
+		Name2BytesBuilderNew(f2b),
+	)
+}
+
+var UnlimitedArchive2bytes kf.Archive2Bytes = Archive2bytesNew(kf.UnlimitedFile2Bytes)

@@ -2,7 +2,6 @@ package fscommon
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"io/fs"
 
@@ -22,24 +21,6 @@ type Rc2Bytes func(r io.ReadCloser) kv.Either[[]byte, error]
 type File2Bytes func(f fs.File) kv.Either[[]byte, error]
 
 type Ids func() kv.Either[kv.Iter[string], error]
-
-type ReaderAtSize struct {
-	io.ReaderAt
-	Size int64
-}
-
-func ReaderAtSizeNew(ra io.ReaderAt, Size int64) kv.Either[ReaderAtSize, error] {
-	var ora kv.Option[io.ReaderAt] = kv.OptionFromBool(nil != ra, func() io.ReaderAt {
-		return ra
-	})
-	var oras kv.Option[ReaderAtSize] = kv.OptionMap(ora, func(ra io.ReaderAt) ReaderAtSize {
-		return ReaderAtSize{
-			ReaderAt: ra,
-			Size:     Size,
-		}
-	})
-	return oras.OkOrElse(func() error { return fmt.Errorf("Invalid arguments") })
-}
 
 var UnlimitedRc2Bytes Rc2Bytes = func(r io.ReadCloser) kv.Either[[]byte, error] {
 	return kv.EitherNew(io.ReadAll(r))

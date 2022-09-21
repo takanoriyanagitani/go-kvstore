@@ -52,6 +52,52 @@ func TestSelect(t *testing.T) {
 			var eb kv.Either[[]byte, error] = nb("path/to/non-exist/file")
 			t.Run("Must fail(must not exist)", checker(eb.IsOk(), false))
 		})
+
+		t.Run("non empty zip", func(t *testing.T) {
+			t.Parallel()
+
+			var buf bytes.Buffer
+
+			var zw *zip.Writer = zip.NewWriter(&buf)
+
+			fh := zip.FileHeader{
+				Name:   "path/to/exist.txt",
+				Method: zip.Store,
+			}
+
+			var ew kv.Either[io.Writer, error] = kv.EitherNew(zw.CreateHeader(&fh))
+			var en kv.Either[int, error] = kv.EitherFlatMap(
+				ew,
+				func(w io.Writer) kv.Either[int, error] {
+					return kv.EitherNew(w.Write([]byte("hw")))
+				},
+			)
+			t.Run("data wrote", checker(en.IsOk(), true))
+
+			var e error = zw.Close()
+			t.Run("zip created", checker(nil == e, true))
+
+			var rdr *bytes.Reader = bytes.NewReader(buf.Bytes())
+			var era kv.Either[kf.ReaderAtSize, error] = kf.ReaderAtSizeNew(rdr, rdr.Size())
+			t.Run("reader at size got", checker(era.IsOk(), true))
+
+			var ra kf.ReaderAtSize = era.Ok().Value()
+
+			var enb kv.Either[kf.Name2Bytes, error] = UnlimitedName2BytesBuilderNew(ra)
+			t.Run("Name2Bytes got", checker(enb.IsOk(), true))
+
+			var nb kf.Name2Bytes = enb.Ok().Value()
+
+			var eb kv.Either[[]byte, error] = nb("path/to/non-exist/file")
+			t.Run("Must fail(must not exist)", checker(eb.IsOk(), false))
+
+			var exist kv.Either[[]byte, error] = nb("path/to/exist.txt")
+			t.Run("Must exists", checker(exist.IsOk(), true))
+
+			var ba []byte = exist.Ok().Value()
+			t.Run("size check", checker(len(ba), 2))
+			t.Run("data check", checkBytes(ba, []byte("hw")))
+		})
 	})
 
 	t.Run("IdsBuilderNew", func(t *testing.T) {

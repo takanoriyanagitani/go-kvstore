@@ -27,6 +27,12 @@ func (i Iter[T]) ToArray() []T {
 	return IterReduce(i, nil, reducer)
 }
 
+func (i Iter[T]) Count() uint64 {
+	return IterReduce(i, 0, func(tot uint64, _ T) uint64 {
+		return tot + 1
+	})
+}
+
 func IterReduce[T, U any](i Iter[T], init U, reducer func(U, T) U) U {
 	state := init
 	for o := i(); o.HasValue(); o = i() {
